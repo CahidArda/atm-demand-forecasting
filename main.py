@@ -3,7 +3,7 @@ from config import config
 from feature_generation import get_all_atms_feature_set
 from preprocessing import get_input_sets, scaler_fit_transform, scaler_transform, scaler_inverse_transform
 from tabTransformer import TabTransformer
-from misc import nmae_error
+from misc import nmae_error, load_pickle
 
 import pandas as pd
 import tensorflow as tf
@@ -14,10 +14,16 @@ from sklearn.model_selection import train_test_split
 # --------------------------------------------------
 
 load_config = config['load_config']
+clusters = load_config['clusters']
 
 df = pd.read_csv(load_config['path'])
 all_atms_feature_set = get_all_atms_feature_set(df, first_n = load_config['n_atms'])
 all_atms_feature_set.sort_index(inplace = True)
+
+# Reading Pickles
+for cluster_feature in clusters:
+    d = load_pickle(clusters[cluster_feature]['path'])
+    all_atms_feature_set[cluster_feature] = all_atms_feature_set['AtmId'].map(d)
 
 # --------------------------------------------------
 # Setting Features
@@ -31,6 +37,11 @@ categorical_features = [cat for cat in
 continuous_features = [cat for cat in
     all_atms_feature_set.select_dtypes(include=feature_config['continuous_column_types'])
     if cat not in feature_config['excluded_continuous']]
+
+print([len(all_atms_feature_set[cat].unique())
+        if cat not in clusters.keys() else
+        clusters[cat]['n_clusters']
+        for cat in categorical_features])
 
 groups = [continuous_features]
 groups.extend(categorical_features)
@@ -58,7 +69,10 @@ test_inputs  = get_input_sets(X_test, groups)
 model_config = config['model_config']
 
 tabTransformer = TabTransformer(
-    categories = [len(all_atms_feature_set[categorical].unique()) for categorical in categorical_features],
+    categories = [len(all_atms_feature_set[cat].unique())
+        if cat not in clusters.keys() else
+        clusters[cat]['n_clusters']
+        for cat in categorical_features],
     num_continuous = len(continuous_features),
     dim = model_config['dim'],
     dim_out = model_config['dim_out'],

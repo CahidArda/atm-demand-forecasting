@@ -1,7 +1,21 @@
 config = {
     'load_config': {
         'path': 'DATA_sample_atm.csv',
-        'n_atms': 50
+        'n_atms': 100,
+        'clusters': {
+            'Day_of_the_Week_Index_ClusterId': {
+                'path': 'pickles/Day_of_the_Week_Index_cluster_pickle',
+                'n_clusters': 20
+            },
+            'Month_of_the_Year_Index_ClusterId': {
+                'path': 'pickles/Month_of_the_Year_Index_cluster_pickle',
+                'n_clusters': 20
+            },
+            'Special_Lunar_Dates_Index_ClusterId': {
+                'path': 'pickles/Special_Lunar_Dates_Index_cluster_pickle',
+                'n_clusters': 20
+            }
+        }
     },
     'feature_config': {
         'target': 'CashIn',
