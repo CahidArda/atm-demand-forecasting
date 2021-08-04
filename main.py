@@ -38,11 +38,6 @@ continuous_features = [cat for cat in
     all_atms_feature_set.select_dtypes(include=feature_config['continuous_column_types'])
     if cat not in feature_config['excluded_continuous']]
 
-print([len(all_atms_feature_set[cat].unique())
-        if cat not in clusters.keys() else
-        clusters[cat]['n_clusters']
-        for cat in categorical_features])
-
 groups = [continuous_features]
 groups.extend(categorical_features)
 
