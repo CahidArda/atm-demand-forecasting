@@ -48,7 +48,7 @@ groups.extend(categorical_features)
 X = all_atms_feature_set[continuous_features + categorical_features]
 y = all_atms_feature_set[feature_config['target']]
 
-X_train, X_test, y_train, y_test = train_test_split(X, y)
+X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle=False)
 
 # MinMaxTransform
 X_train, y_train, scaler_X, scaler_y = scaler_fit_transform(X_train, y_train, continuous_features)
