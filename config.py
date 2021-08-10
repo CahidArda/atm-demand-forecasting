@@ -1,6 +1,7 @@
 config = {
     'load_config': {
-        'path': 'DATA_sample_atm.csv',
+        'data_path': '../internship-study/notebooks/atm_demand/DATA_sample_atm.csv',
+        'hyperparameter_path': 'hyperparemeter.txt',
         'n_atms': 100,
         'clusters': {
             'Day_of_the_Week_Index_ClusterId': {
@@ -37,16 +38,38 @@ config = {
         'heads': 8,
         'attn_dropout': 0.1,
         'ff_dropout': 0.1,
-        'mlp_hidden': [(64, 'relu'), (16, 'relu')]
+        'mlp_hidden': [(64, 'relu'), (16, 'relu')],
+        'normalize_continuous': True
     },
     'training_config': {
-        'learning_rate': 0.2,
+        'learning_rate': 0.05,
         'loss': 'mse',
         'batch_size': 1024,
         'epochs': 5,
         'verbose': 1
     },
     'post_training_config': {
-        'save_model_to': None
+        'save_model_to': './model/tabTransformer'
     }
 }
+
+def read_hyperparameters_from_file(path):
+    import json
+
+    with open(path) as json_file:
+        params = json.load(json_file)
+
+        model_config = config['model_config']
+        
+        model_config['dim'] = params['dim']
+        model_config['depth'] = params['depth']
+        model_config['heads'] = params['heads']
+        model_config['attn_dropout'] = params['attn_dropout']
+        model_config['ff_dropout'] = params['ff_dropout']
+
+        act = params['mlp_activation']
+        model_config['mlp_hidden'] = [(params['mlp_1_dim'], act), (params['mlp_2_dim'], act)]
+
+        config['training_config']['learning_rate'] = params['learning_rate']
+
+    return config

@@ -1,5 +1,5 @@
 
-from config import config
+from config import read_hyperparameters_from_file, config
 from feature_generation import get_all_atms_feature_set
 from preprocessing import get_input_sets, scaler_fit_transform, scaler_transform, scaler_inverse_transform
 from tabTransformer import TabTransformer
@@ -14,9 +14,15 @@ from sklearn.model_selection import train_test_split
 # --------------------------------------------------
 
 load_config = config['load_config']
+
+try:
+    config = read_hyperparameters_from_file(load_config['hyperparameter_path'])
+except:
+    print("WARNING: Hyperparameter file (%s) not found. Using the default config." % load_config['hyperparameter_path'])
+
 clusters = load_config['clusters']
 
-df = pd.read_csv(load_config['path'])
+df = pd.read_csv(load_config['data_path'])
 all_atms_feature_set = get_all_atms_feature_set(df, first_n = load_config['n_atms'])
 all_atms_feature_set.sort_index(inplace = True)
 
@@ -54,8 +60,8 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle=False)
 X_train, y_train, scaler_X, scaler_y = scaler_fit_transform(X_train, y_train, continuous_features)
 X_test, y_test = scaler_transform(X_test, y_test, scaler_X, scaler_y, continuous_features)
 
-train_inputs = get_input_sets(X_train, groups)
-test_inputs  = get_input_sets(X_test, groups)
+X_train = get_input_sets(X_train, groups)
+X_test  = get_input_sets(X_test, groups)
 
 # --------------------------------------------------
 # TabTransformer Model
@@ -89,11 +95,11 @@ tabTransformer.compile(
     loss = training_config['loss']
 )
 
-history = tabTransformer.fit(train_inputs,
+history = tabTransformer.fit(X_train,
     y_train,
     batch_size = training_config['batch_size'],
     epochs = training_config['epochs'],
-    validation_data = (test_inputs, y_test),
+    validation_data = (X_test, y_test),
     verbose = training_config['verbose'])
 
 # --------------------------------------------------
@@ -107,5 +113,5 @@ if save_model_to != None:
     tabTransformer.save_weights(save_model_to)
 
 print("Train score: %.4f, test score: %.4f" % 
-    (nmae_error(scaler_y.inverse_transform(tabTransformer.predict(train_inputs)), scaler_inverse_transform(y_train, scaler_y)),
-    nmae_error(scaler_y.inverse_transform(tabTransformer.predict(test_inputs)), scaler_inverse_transform(y_test, scaler_y))))
+    (nmae_error(scaler_inverse_transform(y_train, scaler_y), scaler_y.inverse_transform(tabTransformer.predict(X_train))),
+    nmae_error(scaler_inverse_transform(y_test, scaler_y), scaler_y.inverse_transform(tabTransformer.predict(X_test)))))
