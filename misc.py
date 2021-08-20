@@ -10,23 +10,22 @@ def load_pickle(path):
     return d
 
 def save_pickle(path, obj):
-    with open(path) as file:
+    with open(path, 'wb') as file:
         pickle.dump(obj, file)
 
 model_path = "/model"
-scaler_path = "/scalers"
 
 def save_model(path, model, scaler_X, scaler_y):
     model.save_weights(path + model_path)
-    save_pickle(path + scaler_path + "/scaler_X.pickle", scaler_X)
-    save_pickle(path + scaler_path + "/scaler_y.pickle", scaler_y)
+    save_pickle(path + "/scaler_X.pickle", scaler_X)
+    save_pickle(path + "/scaler_y.pickle", scaler_y)
 
 def load_model(path, model):
     # load model
     model.load_weights(path + model_path)   
 
     # load scalers
-    scaler_X = load_pickle(path + scaler_path + "/scaler_X.pickle")
-    scaler_y = load_pickle(path + scaler_path + "/scaler_y.pickle")
+    scaler_X = load_pickle(path + "/scaler_X.pickle")
+    scaler_y = load_pickle(path + "/scaler_y.pickle")
 
     return model, scaler_X, scaler_y

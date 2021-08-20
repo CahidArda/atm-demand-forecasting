@@ -116,4 +116,5 @@ else: # predict
     X, y = scaler_transform(X, y, scaler_X, scaler_y, continuous_features)
     X = get_input_sets(X, groups)
 
-    print(nmae_error(scaler_inverse_transform(y, scaler_y), scaler_y.inverse_transform(tabTransformer.predict(X, batch_size=training_config['batch_size']))))
+    print("NMAE Error: %.4f" %
+    nmae_error(scaler_inverse_transform(y, scaler_y), scaler_y.inverse_transform(tabTransformer.predict(X, batch_size=training_config['batch_size']))))

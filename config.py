@@ -50,10 +50,10 @@ config = {
     },
     'do': 'predict',
     'fit_predict': {
-        'save_model_to': './model/tabTransformer'
+        'save_model_to': './model'
     },
     'predict': {
-        'load_model_from': './model/tabTransformer'
+        'load_model_from': './model'
     }
 }
 
