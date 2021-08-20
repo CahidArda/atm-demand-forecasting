@@ -48,8 +48,12 @@ config = {
         'epochs': 5,
         'verbose': 1
     },
-    'post_training_config': {
+    'do': 'predict',
+    'fit_predict': {
         'save_model_to': './model/tabTransformer'
+    },
+    'predict': {
+        'load_model_from': './model/tabTransformer'
     }
 }
 

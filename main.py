@@ -3,7 +3,7 @@ from config import read_hyperparameters_from_file, config
 from feature_generation import get_all_atms_feature_set
 from preprocessing import get_input_sets, scaler_fit_transform, scaler_transform, scaler_inverse_transform
 from tabTransformer import TabTransformer
-from misc import nmae_error, load_pickle
+from misc import nmae_error, load_pickle, save_model, load_model
 
 import pandas as pd
 import tensorflow as tf
@@ -48,22 +48,6 @@ groups = [continuous_features]
 groups.extend(categorical_features)
 
 # --------------------------------------------------
-# Aranging train/test Data
-# --------------------------------------------------
-
-X = all_atms_feature_set[continuous_features + categorical_features]
-y = all_atms_feature_set[feature_config['target']]
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle=False)
-
-# MinMaxTransform
-X_train, y_train, scaler_X, scaler_y = scaler_fit_transform(X_train, y_train, continuous_features)
-X_test, y_test = scaler_transform(X_test, y_test, scaler_X, scaler_y, continuous_features)
-
-X_train = get_input_sets(X_train, groups)
-X_test  = get_input_sets(X_test, groups)
-
-# --------------------------------------------------
 # TabTransformer Model
 # --------------------------------------------------
 
@@ -84,10 +68,6 @@ tabTransformer = TabTransformer(
     mlp_hidden = model_config['mlp_hidden']
 )
 
-# --------------------------------------------------
-# Training
-# --------------------------------------------------
-
 training_config = config['training_config']
 
 tabTransformer.compile(
@@ -95,23 +75,45 @@ tabTransformer.compile(
     loss = training_config['loss']
 )
 
-history = tabTransformer.fit(X_train,
-    y_train,
-    batch_size = training_config['batch_size'],
-    epochs = training_config['epochs'],
-    validation_data = (X_test, y_test),
-    verbose = training_config['verbose'])
+assert config['do'] == 'fit_predict' or config['do'] == 'predict'
 
-# --------------------------------------------------
-# Post Training
-# --------------------------------------------------
+X = all_atms_feature_set[continuous_features + categorical_features]
+y = all_atms_feature_set[feature_config['target']]
 
-post_training_config = config['post_training_config']
+if config['do'] == 'fit_predict':
+   
+    # arange data
+    X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle=False)
 
-save_model_to = post_training_config['save_model_to']
-if save_model_to != None:
-    tabTransformer.save_weights(save_model_to)
+    # MinMaxTransform
+    X_train, y_train, scaler_X, scaler_y = scaler_fit_transform(X_train, y_train, continuous_features)
+    X_test, y_test = scaler_transform(X_test, y_test, scaler_X, scaler_y, continuous_features)
 
-print("Train score: %.4f, test score: %.4f" % 
-    (nmae_error(scaler_inverse_transform(y_train, scaler_y), scaler_y.inverse_transform(tabTransformer.predict(X_train))),
-    nmae_error(scaler_inverse_transform(y_test, scaler_y), scaler_y.inverse_transform(tabTransformer.predict(X_test)))))
+    X_train = get_input_sets(X_train, groups)
+    X_test  = get_input_sets(X_test, groups)
+
+    # train
+    history = tabTransformer.fit(X_train,
+        y_train,
+        batch_size = training_config['batch_size'],
+        epochs = training_config['epochs'],
+        validation_data = (X_test, y_test),
+        verbose = training_config['verbose'])
+
+    # --------------------------------------------------
+    # Post Training
+    # --------------------------------------------------
+
+    save_model(config['fit_predict']['save_model_to'], tabTransformer, scaler_X, scaler_y)
+    
+    print("Train score: %.4f, test score: %.4f" % 
+        (nmae_error(scaler_inverse_transform(y_train, scaler_y), scaler_y.inverse_transform(tabTransformer.predict(X_train, batch_size=training_config['batch_size']))),
+        nmae_error(scaler_inverse_transform(y_test, scaler_y), scaler_y.inverse_transform(tabTransformer.predict(X_test, batch_size=training_config['batch_size'])))))
+else: # predict
+
+    tabTransformer, scaler_X, scaler_y = load_model(config['predict']['load_model_from'], tabTransformer)
+
+    X, y = scaler_transform(X, y, scaler_X, scaler_y, continuous_features)
+    X = get_input_sets(X, groups)
+
+    print(nmae_error(scaler_inverse_transform(y, scaler_y), scaler_y.inverse_transform(tabTransformer.predict(X, batch_size=training_config['batch_size']))))
